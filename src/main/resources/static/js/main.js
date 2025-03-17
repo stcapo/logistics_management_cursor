@@ -32,8 +32,19 @@ function checkLogin() {
         }
         updateUserInfo();
     } else {
+        // 临时用于测试，添加一个模拟用户
         if (window.location.pathname !== '/' && window.location.pathname !== '/login.html') {
-            window.location.href = '/login.html';
+            // 设置一个临时用户用于测试（如果要使用真实登录，请删除这段代码）
+            const tempUser = {
+                username: 'admin',
+                realName: '管理员',
+                id: 1
+            };
+            localStorage.setItem('currentUser', JSON.stringify(tempUser));
+            currentUser = tempUser;
+            updateUserInfo();
+            // 取消重定向到登录页
+            //window.location.href = '/login.html';
         }
     }
 }
@@ -344,10 +355,16 @@ function renderVehicleTable(vehicles) {
                 default: statusText = '未知';
             }
             
+            // 处理loadCapacity可能是BigDecimal的情况
+            let loadCapacity = vehicle.loadCapacity;
+            if (loadCapacity && typeof loadCapacity === 'object' && loadCapacity.hasOwnProperty('value')) {
+                loadCapacity = loadCapacity.value;
+            }
+            
             row.innerHTML = `
                 <td>${vehicle.plateNumber}</td>
                 <td>${vehicle.vehicleType || '-'}</td>
-                <td>${vehicle.loadCapacity || '-'}</td>
+                <td>${loadCapacity || '-'}</td>
                 <td>${statusText}</td>
                 <td>${vehicle.driverName || '-'}</td>
                 <td>${vehicle.driverPhone || '-'}</td>
@@ -400,6 +417,66 @@ function getAuthHeaders() {
 function loadDashboard() {
     // 可在这里添加仪表盘数据加载逻辑
     console.log('加载仪表盘数据');
+    
+    // 加载用户数量
+    fetch('/api/user', { headers: getAuthHeaders() })
+        .then(response => response.json())
+        .then(data => {
+            const userCountElement = document.getElementById('userCount');
+            if (userCountElement) {
+                if (data.code === 200) {
+                    userCountElement.textContent = data.data ? data.data.length : 0;
+                } else {
+                    userCountElement.textContent = '获取失败';
+                }
+            }
+        })
+        .catch(() => {
+            const userCountElement = document.getElementById('userCount');
+            if (userCountElement) {
+                userCountElement.textContent = '获取失败';
+            }
+        });
+    
+    // 加载订单数量
+    fetch('/api/order', { headers: getAuthHeaders() })
+        .then(response => response.json())
+        .then(data => {
+            const orderCountElement = document.getElementById('orderCount');
+            if (orderCountElement) {
+                if (data.code === 200) {
+                    orderCountElement.textContent = data.data ? data.data.length : 0;
+                } else {
+                    orderCountElement.textContent = '获取失败';
+                }
+            }
+        })
+        .catch(() => {
+            const orderCountElement = document.getElementById('orderCount');
+            if (orderCountElement) {
+                orderCountElement.textContent = '获取失败';
+            }
+        });
+    
+    // 加载车辆数量
+    fetch('/api/vehicle', { headers: getAuthHeaders() })
+        .then(response => response.json())
+        .then(data => {
+            const vehicleCountElement = document.getElementById('vehicleCount');
+            if (vehicleCountElement) {
+                if (data.code === 200) {
+                    vehicleCountElement.textContent = data.data ? data.data.length : 0;
+                } else {
+                    vehicleCountElement.textContent = '获取失败';
+                }
+            }
+        })
+        .catch(() => {
+            const vehicleCountElement = document.getElementById('vehicleCount');
+            if (vehicleCountElement) {
+                vehicleCountElement.textContent = '获取失败';
+            }
+        });
 }
 
 // 删除用户

@@ -2,7 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>管理后台 - 物流管理调度系统</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -76,45 +80,5 @@
     </div>
     
     <script src="/js/main.js"></script>
-    <script>
-        // 加载仪表盘数据
-        document.addEventListener('DOMContentLoaded', function() {
-            // 加载用户数量
-            fetch('/api/user', { headers: { 'Content-Type': 'application/json' } })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code === 200) {
-                        document.getElementById('userCount').textContent = data.data ? data.data.length : 0;
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('userCount').textContent = '获取失败';
-                });
-            
-            // 加载订单数量
-            fetch('/api/order', { headers: { 'Content-Type': 'application/json' } })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code === 200) {
-                        document.getElementById('orderCount').textContent = data.data ? data.data.length : 0;
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('orderCount').textContent = '获取失败';
-                });
-            
-            // 加载车辆数量
-            fetch('/api/vehicle', { headers: { 'Content-Type': 'application/json' } })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.code === 200) {
-                        document.getElementById('vehicleCount').textContent = data.data ? data.data.length : 0;
-                    }
-                })
-                .catch(() => {
-                    document.getElementById('vehicleCount').textContent = '获取失败';
-                });
-        });
-    </script>
 </body>
 </html> 
