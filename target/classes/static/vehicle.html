@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>车辆管理 - 物流管理调度系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- 页面头部 -->
+    <div class="header">
+        <div class="container header-container">
+            <div class="logo">物流管理调度系统</div>
+            <div class="user-info">
+                <span class="user-name" id="userName">管理员</span>
+                <a href="javascript:void(0)" id="logoutBtn" class="logout-btn">退出</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 消息提示 -->
+        <div id="message" style="display: none;"></div>
+        
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <ul>
+                <li><a href="/admin.html">首页</a></li>
+                <li><a href="/user.html">用户管理</a></li>
+                <li><a href="/order.html">订单管理</a></li>
+                <li><a href="/vehicle.html" class="active">车辆管理</a></li>
+            </ul>
+        </div>
+        
+        <!-- 主要内容 -->
+        <div class="main-content">
+            <h2 class="page-title">车辆管理</h2>
+            
+            <!-- 操作栏 -->
+            <div style="margin-bottom: 20px; display: flex; justify-content: space-between;">
+                <button class="btn" id="addVehicleBtn">添加车辆</button>
+                
+                <!-- 搜索栏 -->
+                <div class="search-box">
+                    <select id="searchType" class="form-control" style="width: 120px;">
+                        <option value="plateNumber">车牌号</option>
+                        <option value="vehicleType">车型</option>
+                        <option value="driverName">司机姓名</option>
+                        <option value="status">车辆状态</option>
+                    </select>
+                    <input type="text" id="searchInput" class="form-control" placeholder="请输入搜索内容">
+                    <button class="btn" id="searchBtn">搜索</button>
+                </div>
+            </div>
+            
+            <!-- 车辆列表 -->
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>车牌号</th>
+                        <th>车型</th>
+                        <th>载重(吨)</th>
+                        <th>状态</th>
+                        <th>司机姓名</th>
+                        <th>司机电话</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="vehicleTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align:center">加载中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 添加/编辑车辆弹窗 -->
+    <div id="vehicleModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="vehicleModalTitle">添加车辆</h3>
+                <span class="close-btn" id="vehicleModalClose">&times;</span>
+            </div>
+            
+            <form id="vehicleForm">
+                <input type="hidden" id="vehicleId">
+                
+                <div class="form-group">
+                    <label for="plateNumber">车牌号</label>
+                    <input type="text" id="plateNumber" class="form-control" placeholder="请输入车牌号" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="vehicleType">车型</label>
+                        <input type="text" id="vehicleType" class="form-control" placeholder="请输入车型">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loadCapacity">载重(吨)</label>
+                        <input type="number" id="loadCapacity" class="form-control" placeholder="请输入载重" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="vehicleStatus">车辆状态</label>
+                    <select id="vehicleStatus" class="form-control">
+                        <option value="1">闲置中</option>
+                        <option value="0">维修中</option>
+                        <option value="2">运输中</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="driverName">司机姓名</label>
+                        <input type="text" id="driverName" class="form-control" placeholder="请输入司机姓名">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="driverPhone">司机电话</label>
+                        <input type="text" id="driverPhone" class="form-control" placeholder="请输入司机电话">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="vehicleRemark">备注</label>
+                    <textarea id="vehicleRemark" class="form-control" placeholder="请输入备注" rows="3"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn" id="vehicleCancelBtn">取消</button>
+                    <button type="submit" class="btn" id="vehicleSaveBtn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/js/main.js"></script>
+    <script>
+        // 车辆管理页面特定的JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // 绑定添加车辆按钮事件
+            document.getElementById('addVehicleBtn').addEventListener('click', function() {
+                openVehicleAddModal();
+            });
+            
+            // 绑定模态框关闭事件
+            document.getElementById('vehicleModalClose').addEventListener('click', function() {
+                closeVehicleModal();
+            });
+            
+            document.getElementById('vehicleCancelBtn').addEventListener('click', function() {
+                closeVehicleModal();
+            });
+            
+            // 绑定表单提交事件
+            document.getElementById('vehicleForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveVehicle();
+            });
+            
+            // 绑定搜索按钮事件
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                searchVehicles();
+            });
+            
+            // 绑定搜索框回车事件
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchVehicles();
+                }
+            });
+        });
+        
+        // 打开添加车辆模态框
+        function openVehicleAddModal() {
+            document.getElementById('vehicleModalTitle').textContent = '添加车辆';
+            document.getElementById('vehicleId').value = '';
+            document.getElementById('vehicleForm').reset();
+            document.getElementById('vehicleModal').style.display = 'block';
+        }
+        
+        // 打开编辑车辆模态框
+        function openVehicleEditModal(vehicleId) {
+            document.getElementById('vehicleModalTitle').textContent = '编辑车辆';
+            document.getElementById('vehicleId').value = vehicleId;
+            
+            // 获取车辆信息
+            fetch(`/api/vehicle/${vehicleId}`, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    const vehicle = data.data;
+                    document.getElementById('plateNumber').value = vehicle.plateNumber || '';
+                    document.getElementById('vehicleType').value = vehicle.vehicleType || '';
+                    document.getElementById('loadCapacity').value = vehicle.loadCapacity || '';
+                    document.getElementById('vehicleStatus').value = vehicle.status;
+                    document.getElementById('driverName').value = vehicle.driverName || '';
+                    document.getElementById('driverPhone').value = vehicle.driverPhone || '';
+                    document.getElementById('vehicleRemark').value = vehicle.remark || '';
+                    
+                    document.getElementById('vehicleModal').style.display = 'block';
+                } else {
+                    showMessage(data.message || '获取车辆信息失败');
+                }
+            })
+            .catch(error => {
+                console.error('获取车辆信息错误:', error);
+                showMessage('获取车辆信息时发生错误');
+            });
+        }
+        
+        // 关闭车辆模态框
+        function closeVehicleModal() {
+            document.getElementById('vehicleModal').style.display = 'none';
+        }
+        
+        // 保存车辆
+        function saveVehicle() {
+            const vehicleId = document.getElementById('vehicleId').value;
+            const isAdd = !vehicleId;
+            
+            // 构建车辆数据
+            const vehicleData = {
+                plateNumber: document.getElementById('plateNumber').value,
+                vehicleType: document.getElementById('vehicleType').value,
+                loadCapacity: document.getElementById('loadCapacity').value ? parseFloat(document.getElementById('loadCapacity').value) : null,
+                status: parseInt(document.getElementById('vehicleStatus').value),
+                driverName: document.getElementById('driverName').value,
+                driverPhone: document.getElementById('driverPhone').value,
+                remark: document.getElementById('vehicleRemark').value
+            };
+            
+            // 如果是编辑模式，添加ID字段
+            if (!isAdd) {
+                vehicleData.id = parseInt(vehicleId);
+            }
+            
+            // 发送请求
+            fetch('/api/vehicle', {
+                method: isAdd ? 'POST' : 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(vehicleData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    showMessage(`${isAdd ? '添加' : '更新'}车辆成功`, 'success');
+                    closeVehicleModal();
+                    loadVehicles(); // 重新加载车辆列表
+                } else {
+                    showMessage(data.message || `${isAdd ? '添加' : '更新'}车辆失败`);
+                }
+            })
+            .catch(error => {
+                console.error(`${isAdd ? '添加' : '更新'}车辆错误:`, error);
+                showMessage(`${isAdd ? '添加' : '更新'}车辆时发生错误`);
+            });
+        }
+        
+        // 搜索车辆
+        function searchVehicles() {
+            const searchType = document.getElementById('searchType').value;
+            const searchContent = document.getElementById('searchInput').value.trim();
+            
+            if (!searchContent) {
+                loadVehicles();
+                return;
+            }
+            
+            let url = '';
+            switch (searchType) {
+                case 'plateNumber':
+                    url = `/api/vehicle/plate/${encodeURIComponent(searchContent)}`;
+                    break;
+                case 'vehicleType':
+                    url = `/api/vehicle/type?vehicleType=${encodeURIComponent(searchContent)}`;
+                    break;
+                case 'driverName':
+                    url = `/api/vehicle/driver?driverName=${encodeURIComponent(searchContent)}`;
+                    break;
+                case 'status':
+                    let statusValue = null;
+                    if (searchContent.includes('闲置')) {
+                        statusValue = 1;
+                    } else if (searchContent.includes('维修')) {
+                        statusValue = 0;
+                    } else if (searchContent.includes('运输')) {
+                        statusValue = 2;
+                    } else {
+                        statusValue = parseInt(searchContent);
+                    }
+                    url = `/api/vehicle/status/${statusValue}`;
+                    break;
+                default:
+                    loadVehicles();
+                    return;
+            }
+            
+            fetch(url, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    // 如果是查询单个车辆，包装成数组
+                    const vehicles = Array.isArray(data.data) ? data.data : [data.data];
+                    renderVehicleTable(vehicles);
+                } else {
+                    showMessage(data.message || '搜索车辆失败');
+                }
+            })
+            .catch(error => {
+                console.error('搜索车辆错误:', error);
+                showMessage('搜索车辆时发生错误');
+            });
+        }
+    </script>
+</body>
+</html> 

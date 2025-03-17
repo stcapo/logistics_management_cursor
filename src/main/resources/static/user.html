@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - 物流管理调度系统</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- 页面头部 -->
+    <div class="header">
+        <div class="container header-container">
+            <div class="logo">物流管理调度系统</div>
+            <div class="user-info">
+                <span class="user-name" id="userName">管理员</span>
+                <a href="javascript:void(0)" id="logoutBtn" class="logout-btn">退出</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- 消息提示 -->
+        <div id="message" style="display: none;"></div>
+        
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <ul>
+                <li><a href="/admin.html">首页</a></li>
+                <li><a href="/user.html" class="active">用户管理</a></li>
+                <li><a href="/order.html">订单管理</a></li>
+                <li><a href="/vehicle.html">车辆管理</a></li>
+            </ul>
+        </div>
+        
+        <!-- 主要内容 -->
+        <div class="main-content">
+            <h2 class="page-title">用户管理</h2>
+            
+            <!-- 操作栏 -->
+            <div style="margin-bottom: 20px;">
+                <button class="btn" id="addUserBtn">添加用户</button>
+            </div>
+            
+            <!-- 用户列表 -->
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>姓名</th>
+                        <th>手机号</th>
+                        <th>邮箱</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align:center">加载中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 添加/编辑用户弹窗 -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="userModalTitle">添加用户</h3>
+                <span class="close-btn" id="userModalClose">&times;</span>
+            </div>
+            
+            <form id="userForm">
+                <input type="hidden" id="userId">
+                
+                <div class="form-group">
+                    <label for="userUsername">用户名</label>
+                    <input type="text" id="userUsername" class="form-control" placeholder="请输入用户名" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userPassword">密码</label>
+                    <input type="password" id="userPassword" class="form-control" placeholder="请输入密码">
+                    <small style="color:#666">编辑时留空表示不修改密码</small>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="userRealName">姓名</label>
+                        <input type="text" id="userRealName" class="form-control" placeholder="请输入姓名">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="userPhone">手机号</label>
+                        <input type="text" id="userPhone" class="form-control" placeholder="请输入手机号">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userEmail">邮箱</label>
+                    <input type="email" id="userEmail" class="form-control" placeholder="请输入邮箱">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userStatus">状态</label>
+                    <select id="userStatus" class="form-control">
+                        <option value="1">启用</option>
+                        <option value="0">禁用</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn" id="userCancelBtn">取消</button>
+                    <button type="submit" class="btn" id="userSaveBtn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/js/main.js"></script>
+    <script>
+        // 用户管理页面特定的JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // 绑定添加用户按钮事件
+            document.getElementById('addUserBtn').addEventListener('click', function() {
+                openUserAddModal();
+            });
+            
+            // 绑定模态框关闭事件
+            document.getElementById('userModalClose').addEventListener('click', function() {
+                closeUserModal();
+            });
+            
+            document.getElementById('userCancelBtn').addEventListener('click', function() {
+                closeUserModal();
+            });
+            
+            // 绑定表单提交事件
+            document.getElementById('userForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveUser();
+            });
+        });
+        
+        // 打开添加用户模态框
+        function openUserAddModal() {
+            document.getElementById('userModalTitle').textContent = '添加用户';
+            document.getElementById('userId').value = '';
+            document.getElementById('userForm').reset();
+            document.getElementById('userPassword').required = true;
+            document.getElementById('userModal').style.display = 'block';
+        }
+        
+        // 打开编辑用户模态框
+        function openUserEditModal(userId) {
+            document.getElementById('userModalTitle').textContent = '编辑用户';
+            document.getElementById('userId').value = userId;
+            document.getElementById('userPassword').required = false;
+            
+            // 获取用户信息
+            fetch(`/api/user/${userId}`, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    const user = data.data;
+                    document.getElementById('userUsername').value = user.username || '';
+                    document.getElementById('userPassword').value = '';
+                    document.getElementById('userRealName').value = user.realName || '';
+                    document.getElementById('userPhone').value = user.phone || '';
+                    document.getElementById('userEmail').value = user.email || '';
+                    document.getElementById('userStatus').value = user.status;
+                    
+                    document.getElementById('userModal').style.display = 'block';
+                } else {
+                    showMessage(data.message || '获取用户信息失败');
+                }
+            })
+            .catch(error => {
+                console.error('获取用户信息错误:', error);
+                showMessage('获取用户信息时发生错误');
+            });
+        }
+        
+        // 关闭用户模态框
+        function closeUserModal() {
+            document.getElementById('userModal').style.display = 'none';
+        }
+        
+        // 保存用户
+        function saveUser() {
+            const userId = document.getElementById('userId').value;
+            const isAdd = !userId;
+            
+            // 构建用户数据
+            const userData = {
+                username: document.getElementById('userUsername').value,
+                realName: document.getElementById('userRealName').value,
+                phone: document.getElementById('userPhone').value,
+                email: document.getElementById('userEmail').value,
+                status: parseInt(document.getElementById('userStatus').value)
+            };
+            
+            // 如果是编辑模式且有填写密码，才添加密码字段
+            const password = document.getElementById('userPassword').value;
+            if (password) {
+                userData.password = password;
+            }
+            
+            // 如果是编辑模式，添加ID字段
+            if (!isAdd) {
+                userData.id = parseInt(userId);
+            }
+            
+            // 发送请求
+            fetch('/api/user', {
+                method: isAdd ? 'POST' : 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    showMessage(`${isAdd ? '添加' : '更新'}用户成功`, 'success');
+                    closeUserModal();
+                    loadUsers(); // 重新加载用户列表
+                } else {
+                    showMessage(data.message || `${isAdd ? '添加' : '更新'}用户失败`);
+                }
+            })
+            .catch(error => {
+                console.error(`${isAdd ? '添加' : '更新'}用户错误:`, error);
+                showMessage(`${isAdd ? '添加' : '更新'}用户时发生错误`);
+            });
+        }
+    </script>
+</body>
+</html> 
